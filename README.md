@@ -61,6 +61,8 @@ docker-compose up --build
 http://localhost:8080/swagger-ui/index.html
 ```
 
+По умолчанию есть возможности зайти с ролью `ADMIN` по логину admin, паролю admin123
+
 ## Аутентификация и роли
 
 - Поддерживаются два типа пользователей: `ADMIN` и `USER`

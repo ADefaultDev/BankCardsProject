@@ -78,7 +78,6 @@ public class CardService {
         Long userId = getCurrentUserId();
         List<Card> cards = cardRepository.findByUserId(userId);
         return cards.stream().map(this::toDTO).collect(Collectors.toList());
-
     }
 
     /**
@@ -91,7 +90,6 @@ public class CardService {
                 .orElseThrow(() -> new CardNotFoundException(cardId));
         card.setStatus(CardStatus.BLOCKED);
         cardRepository.save(card);
-
     }
 
     /**
@@ -104,11 +102,16 @@ public class CardService {
      */
     public CardDTO toDTO(Card card) {
         String decryptedNumber = EncryptionUtil.decrypt(card.getEncryptedCardNumber());
-        String maskedNumber = maskCardNumber(decryptedNumber);
+        User currentUser = userRepository.findById(getCurrentUserId())
+                .orElseThrow(() -> new EntityNotFoundException("Пользователь не найден"));
+
+        String displayNumber = currentUser.getRole().toString().equals("ROLE_USER")
+                ? decryptedNumber
+                : maskCardNumber(decryptedNumber);
 
         return new CardDTO(
                 card.getId(),
-                maskedNumber,
+                displayNumber,
                 card.getUser().getId(),
                 card.getExpirationDate(),
                 card.getBalance(),
@@ -144,5 +147,17 @@ public class CardService {
         }
 
         return card.getBalance();
+    }
+
+    /**
+     * Возвращает все карты в системе для администратора (в маскированном виде)
+     *
+     * @return список карт
+     */
+    public List<CardDTO> getAllCardsForAdmin() {
+
+        return cardRepository.findAll().stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
     }
 }

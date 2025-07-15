@@ -74,6 +74,17 @@ public class CardController {
         return ResponseEntity.ok(cardService.getCardsForCurrentUser());
     }
 
+    @Operation(summary = "Получение карт всех пользователей")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Список карт успешно получен"),
+            @ApiResponse(responseCode = "401", description = "Пользователь не аутентифицирован"),
+            @ApiResponse(responseCode = "403", description = "Недостаточно прав (не ADMIN)")
+    })
+    @GetMapping("/admin/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<CardDTO> getAllCards() {
+        return cardService.getAllCardsForAdmin();
+    }
     /**
      * Получает баланс конкретной карты текущего пользователя.
      * Доступен только аутентифицированным пользователям с ролью USER.

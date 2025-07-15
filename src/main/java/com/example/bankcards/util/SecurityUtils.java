@@ -27,4 +27,5 @@ public class SecurityUtils {
         }
         return userDetails.id();
     }
+
 }

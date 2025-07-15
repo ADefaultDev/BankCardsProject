@@ -8,7 +8,7 @@ import java.time.LocalDate;
 /**
  * DTO, представляющий данные банковской карты.
  * @param id Уникальный идентификатор карты
- * @param maskedCardNumber Замаскированный номер карты (например, "****1234")
+ * @param cardNumber  номер карты (может быть замаскирован)
  * @param userId Идентификатор владельца карты
  * @param expirationDate Дата истечения срока действия
  * @param balance Текущий баланс (используется BigDecimal для точности)
@@ -23,7 +23,7 @@ public record CardDTO(
         Long id,
 
         @Schema(description = "Замаскированный номер карты", example = "****1234")
-        String maskedCardNumber,
+        String cardNumber,
 
         @Schema(description = "Идентификатор владельца карты", example = "202")
         Long userId,

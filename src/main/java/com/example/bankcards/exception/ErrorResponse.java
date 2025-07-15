@@ -1,7 +1,5 @@
 package com.example.bankcards.exception;
 
-import io.swagger.v3.oas.annotations.media.Schema;
-
 /**
  * Класс для стандартизированного представления ошибок в API.
  * Содержит сообщение об ошибке и HTTP статус код.

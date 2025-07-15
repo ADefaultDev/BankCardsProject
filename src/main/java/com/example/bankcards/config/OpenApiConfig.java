@@ -1,7 +1,6 @@
 package com.example.bankcards.config;
 
 import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.servers.Server;
@@ -58,10 +57,6 @@ public class OpenApiConfig {
                             - Переводы между картами
                             - Аутентификация и авторизация
                             """)
-                        .contact(new Contact()
-                                .name("API Support")
-                                .email("support@bankcards.com")
-                                .url("https://bankcards.com/contact"))
                         .license(new License()
                                 .name("Apache 2.0")
                                 .url("https://www.apache.org/licenses/LICENSE-2.0")));

@@ -17,7 +17,7 @@ databaseChangeLog:
             tableName: users
             columns:
               - column: { name: username, value: admin }
-              - column: { name: password, value: "$2a$10$cRjA1wgX1cfGtbwScGSeLemA2W2fHdzxZUdhOzXuvyYJeSnp9VNIO" }
+              - column: { name: password, value: "$2a$10$y846OX/30j40ZydvTxYYBOy3jtg6RM1hKE6wmtzcg.sQ0P90.FQ.y" } #admin123
               - column: { name: first_name, value: Admin }
               - column: { name: second_name, value: Root }
               - column: { name: surname, value: User }

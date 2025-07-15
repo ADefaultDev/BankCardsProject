@@ -1,7 +1,6 @@
 package com.example.bankcards.config;
 
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
-import io.swagger.v3.oas.annotations.enums.SecuritySchemeIn;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import org.springframework.context.annotation.Configuration;
 
@@ -16,8 +15,7 @@ import org.springframework.context.annotation.Configuration;
         name = "bearerAuth",
         type = SecuritySchemeType.HTTP,
         scheme = "bearer",
-        bearerFormat = "JWT",
-        in = SecuritySchemeIn.HEADER
+        bearerFormat = "JWT"
 )
 public class SwaggerConfig {
 

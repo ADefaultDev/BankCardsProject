@@ -1,1 +1,801 @@
-# Здесь будет OpenAPI описание всех доступных эндпоинтов и моделей данных.
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Bank Cards API",
+    "description": "## REST API для системы банковских карт\n### Основные возможности:\n- Управление пользователями\n- Операции с банковскими картами\n- Переводы между картами\n- Аутентификация и авторизация\n",
+    "contact": {
+      "name": "API Support",
+      "url": "https://bankcards.com/contact",
+      "email": "support@bankcards.com"
+    },
+    "license": {
+      "name": "Apache 2.0",
+      "url": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Development Server"
+    },
+    {
+      "url": "http://localhost:8080",
+      "description": "Production Server"
+    }
+  ],
+  "paths": {
+    "/api/transfers": {
+      "post": {
+        "tags": [
+          "transfer-controller"
+        ],
+        "summary": "Перевод средств между картами",
+        "operationId": "transfer",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransferRequestDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Перевод успешно выполнен",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Пользователь не аутентифицирован",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferResponseDTO"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка валидации, недостаточно средств, карта не найдена или заблокирована",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferResponseDTO"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Недостаточно прав (не USER)",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferResponseDTO"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferResponseDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/cards": {
+      "get": {
+        "tags": [
+          "card-controller"
+        ],
+        "summary": "Получение всех карт текущего пользователя",
+        "operationId": "getCardsForUser",
+        "responses": {
+          "401": {
+            "description": "Пользователь не аутентифицирован",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CardDTO"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Недостаточно прав (не USER)",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CardDTO"
+                  }
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Список карт успешно получен",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CardDTO"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "card-controller"
+        ],
+        "summary": "Создание новой банковской карты",
+        "operationId": "create",
+        "responses": {
+          "401": {
+            "description": "Пользователь не аутентифицирован",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CardDTO"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Недостаточно прав (не USER)",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CardDTO"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Карта успешно создана",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CardDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/cards/{id}/block": {
+      "post": {
+        "tags": [
+          "card-controller"
+        ],
+        "summary": "Блокировка карты по ID",
+        "operationId": "blockCard",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Карта не найдена",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Пользователь не аутентифицирован",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Карта успешно заблокирована",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Недостаточно прав (не ADMIN)",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "tags": [
+          "auth-controller"
+        ],
+        "summary": "Регистрация нового пользователя",
+        "operationId": "register",
+        "requestBody": {
+          "description": "Данные нового пользователя",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequestDTO"
+              },
+              "example": {
+                "username": "new_user",
+                "password": "password123",
+                "firstName": "Иван",
+                "secondName": "Иванов",
+                "surname": "Иванович",
+                "birthday": "1990-01-01"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Пользователь успешно зарегистрирован",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponseDTO"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка валидации запроса",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "auth-controller"
+        ],
+        "summary": "Аутентификация пользователя (вход)",
+        "operationId": "login",
+        "requestBody": {
+          "description": "Данные для входа",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequestDTO"
+              },
+              "example": {
+                "username": "user123",
+                "password": "pass1234"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Аутентификация успешна",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Неверные учетные данные",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponseDTO"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users": {
+      "get": {
+        "tags": [
+          "user-controller"
+        ],
+        "summary": "Получить список всех пользователей",
+        "operationId": "getAll",
+        "responses": {
+          "403": {
+            "description": "Доступ запрещен (не ADMIN)",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserDTO"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Пользователь не аутентифицирован",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserDTO"
+                  }
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Список пользователей успешно получен",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserDTO"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserDTO"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/cards/{id}/balance": {
+      "get": {
+        "tags": [
+          "card-controller"
+        ],
+        "summary": "Получение баланса карты по ID",
+        "operationId": "getCardBalance",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Карта не найдена или недоступна",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "number",
+                  "format": "double"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Баланс карты успешно получен",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "number",
+                  "format": "double"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Пользователь не аутентифицирован",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "number",
+                  "format": "double"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Недостаточно прав (не USER)",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "number",
+                  "format": "double"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/users/{id}": {
+      "delete": {
+        "tags": [
+          "user-controller"
+        ],
+        "summary": "Удалить пользователя по идентификатору",
+        "operationId": "delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "Доступ запрещен (не ADMIN)"
+          },
+          "401": {
+            "description": "Пользователь не аутентифицирован"
+          },
+          "200": {
+            "description": "Пользователь успешно удалён"
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера"
+          },
+          "400": {
+            "description": "Пользователь не найден"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "TransferRequestDTO": {
+        "required": [
+          "amount",
+          "fromCardId",
+          "toCardId"
+        ],
+        "type": "object",
+        "properties": {
+          "fromCardId": {
+            "type": "integer",
+            "description": "ID карты-отправителя",
+            "format": "int64",
+            "example": 1001
+          },
+          "toCardId": {
+            "type": "integer",
+            "description": "ID карты-получателя",
+            "format": "int64",
+            "example": 2002
+          },
+          "amount": {
+            "type": "number",
+            "description": "Сумма перевода (положительное число)",
+            "format": "double",
+            "example": 250
+          }
+        },
+        "description": "Запрос на перевод средств между картами"
+      },
+      "TransferResponseDTO": {
+        "type": "object",
+        "properties": {
+          "fromCardId": {
+            "type": "integer",
+            "description": "ID карты отправителя",
+            "format": "int64",
+            "example": 1001
+          },
+          "toCardId": {
+            "type": "integer",
+            "description": "ID карты получателя",
+            "format": "int64",
+            "example": 2002
+          },
+          "amount": {
+            "type": "number",
+            "description": "Сумма перевода",
+            "format": "double",
+            "example": 250
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Дата и время выполнения операции",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "description": "Статус перевода",
+            "example": "SUCCESS"
+          }
+        },
+        "description": "Ответ на перевод средств между картами"
+      },
+      "CardDTO": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Уникальный идентификатор карты",
+            "format": "int64",
+            "example": 101
+          },
+          "maskedCardNumber": {
+            "type": "string",
+            "description": "Замаскированный номер карты",
+            "example": "****1234"
+          },
+          "userId": {
+            "type": "integer",
+            "description": "Идентификатор владельца карты",
+            "format": "int64",
+            "example": 202
+          },
+          "expirationDate": {
+            "type": "string",
+            "description": "Дата истечения срока действия",
+            "format": "date",
+            "example": "2026-12-31"
+          },
+          "balance": {
+            "type": "number",
+            "description": "Текущий баланс",
+            "format": "double",
+            "example": 1500.75
+          },
+          "status": {
+            "type": "string",
+            "description": "Статус карты (ACTIVE, BLOCKED, EXPIRED)",
+            "example": "ACTIVE",
+            "enum": [
+              "ACTIVE",
+              "BLOCKED",
+              "EXPIRED"
+            ]
+          }
+        },
+        "description": "DTO, представляющий данные банковской карты"
+      },
+      "RegisterRequestDTO": {
+        "required": [
+          "firstName",
+          "password",
+          "secondName",
+          "username"
+        ],
+        "type": "object",
+        "properties": {
+          "username": {
+            "maxLength": 20,
+            "minLength": 4,
+            "type": "string",
+            "description": "Логин (4–20 символов)",
+            "example": "newuser123"
+          },
+          "password": {
+            "maxLength": 30,
+            "minLength": 8,
+            "type": "string",
+            "description": "Пароль (от 8 до 30 символов)",
+            "example": "password123"
+          },
+          "firstName": {
+            "pattern": "^[\\p{L}-]+$",
+            "type": "string",
+            "description": "Имя (только буквы и дефисы)",
+            "example": "Иван"
+          },
+          "secondName": {
+            "pattern": "^[\\p{L}-]+$",
+            "type": "string",
+            "description": "Фамилия (только буквы и дефисы)",
+            "example": "Петров"
+          },
+          "surname": {
+            "pattern": "^[\\p{L}-]+$",
+            "type": "string",
+            "description": "Отчество (необязательно, только буквы и дефисы)",
+            "example": "Александрович"
+          },
+          "birthday": {
+            "type": "string",
+            "description": "Дата рождения (должна быть в прошлом)",
+            "format": "date",
+            "example": "1990-05-20"
+          }
+        },
+        "description": "Запрос на регистрацию нового пользователя"
+      },
+      "AuthResponseDTO": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "JWT-токен доступа. Может быть null при ошибке",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "message": {
+            "type": "string",
+            "description": "Информационное сообщение",
+            "example": "Аутентификация прошла успешно"
+          }
+        },
+        "description": "Ответ на запрос аутентификации"
+      },
+      "LoginRequestDTO": {
+        "required": [
+          "password",
+          "username"
+        ],
+        "type": "object",
+        "properties": {
+          "username": {
+            "maxLength": 20,
+            "minLength": 4,
+            "type": "string",
+            "description": "Логин пользователя (4–20 символов)",
+            "example": "user123"
+          },
+          "password": {
+            "maxLength": 30,
+            "minLength": 6,
+            "type": "string",
+            "description": "Пароль пользователя (6-30 символов)",
+            "example": "password123"
+          }
+        },
+        "description": "Запрос на аутентификацию пользователя"
+      },
+      "UserDTO": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Уникальный идентификатор пользователя",
+            "format": "int64",
+            "example": 123
+          },
+          "username": {
+            "type": "string",
+            "description": "Логин пользователя (уникальный)",
+            "example": "user123"
+          },
+          "firstName": {
+            "type": "string",
+            "description": "Имя пользователя",
+            "example": "Иван"
+          },
+          "secondName": {
+            "type": "string",
+            "description": "Фамилия пользователя",
+            "example": "Иванов"
+          },
+          "surname": {
+            "type": "string",
+            "description": "Отчество пользователя",
+            "nullable": true,
+            "example": "Иванович"
+          },
+          "birthday": {
+            "type": "string",
+            "description": "Дата рождения (не может быть будущей датой)",
+            "format": "date",
+            "example": "1980-05-20"
+          },
+          "roleName": {
+            "type": "string",
+            "description": "Название роли пользователя",
+            "example": "USER"
+          }
+        },
+        "description": "Данные пользователя"
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}

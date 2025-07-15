@@ -29,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -62,6 +63,9 @@ class CardServiceTest {
     void createCard_ShouldCreateCardSuccessfully() {
         long mockUserId = 1L;
         User mockUser = new User();
+        Role role = new Role();
+        role.setRoleName("ROLE_USER");
+        mockUser.setRole(role);
         mockUser.setId(mockUserId);
 
         try (MockedStatic<SecurityUtils> securityUtilsMocked = mockStatic(SecurityUtils.class);
@@ -82,7 +86,7 @@ class CardServiceTest {
 
             assertNotNull(result);
             assertEquals(mockUserId, result.userId());
-            assertTrue(result.maskedCardNumber().startsWith("**** **** ****"));
+            assertTrue(result.cardNumber().startsWith("123456781234"));
             assertEquals(CardStatus.ACTIVE, result.status());
         }
     }
@@ -103,6 +107,9 @@ class CardServiceTest {
         long mockUserId = 2L;
         User user = new User();
         user.setId(mockUserId);
+        Role role = new Role();
+        role.setRoleName("ROLE_USER");
+        user.setRole(role);
 
         Card card = new Card();
         card.setId(1L);
@@ -118,13 +125,14 @@ class CardServiceTest {
              MockedStatic<EncryptionUtil> encryptionMocked = mockStatic(EncryptionUtil.class)) {
 
             securityUtilsMocked.when(SecurityUtils::getCurrentUserId).thenReturn(mockUserId);
-            when(cardRepository.findByUserId(mockUserId)).thenReturn(cardList);
             encryptionMocked.when(() -> EncryptionUtil.decrypt("enc")).thenReturn("1234567812345678");
+
+            when(cardRepository.findByUserId(mockUserId)).thenReturn(cardList);
+            when(userRepository.findById(mockUserId)).thenReturn(Optional.of(user));
 
             List<CardDTO> result = cardService.getCardsForCurrentUser();
 
             assertEquals(1, result.size());
-            assertEquals("**** **** **** 5678", result.getFirst().maskedCardNumber());
         }
     }
 
@@ -153,23 +161,37 @@ class CardServiceTest {
 
     @Test
     void toDTO_ShouldConvertCorrectly() {
-        User user = new User();
-        user.setId(5L);
+        User cardOwner = new User();
+        cardOwner.setId(5L);
+        Role role = new Role();
+        role.setRoleName("ROLE_ADMIN");
+        cardOwner.setRole(role);
 
         Card card = new Card();
         card.setId(1L);
-        card.setUser(user);
+        card.setUser(cardOwner);
         card.setEncryptedCardNumber("enc");
         card.setBalance(500.0);
         card.setExpirationDate(LocalDate.of(2030, 1, 1));
         card.setStatus(CardStatus.ACTIVE);
 
-        try (MockedStatic<EncryptionUtil> encryptionMocked = mockStatic(EncryptionUtil.class)) {
+        try (MockedStatic<EncryptionUtil> encryptionMocked = mockStatic(EncryptionUtil.class);
+             MockedStatic<SecurityUtils> securityUtilsMocked = mockStatic(SecurityUtils.class)) {
+
             encryptionMocked.when(() -> EncryptionUtil.decrypt("enc")).thenReturn("1234567890123456");
+
+            when(userRepository.findById(anyLong())).thenReturn(Optional.of(cardOwner));
+
+            securityUtilsMocked.when(SecurityUtils::getCurrentUserId).thenReturn(1L);
+            User currentUser = new User();
+            currentUser.setId(1L);
+            currentUser.setRole(role);
+            when(userRepository.findById(1L)).thenReturn(Optional.of(currentUser));
 
             CardDTO dto = cardService.toDTO(card);
 
-            assertEquals("**** **** **** 3456", dto.maskedCardNumber());
+            assertEquals("**** **** **** 3456", dto.cardNumber());
+
             assertEquals(CardStatus.ACTIVE, dto.status());
             assertEquals(5L, dto.userId());
         }

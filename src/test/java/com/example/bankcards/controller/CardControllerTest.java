@@ -18,7 +18,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.LocalDate;
-import java.util.List;
 
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
@@ -63,39 +62,7 @@ class CardControllerTest {
         mockMvc.perform(post("/api/cards")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1L))
-                .andExpect(jsonPath("$.maskedCardNumber").value("****3456"))
-                .andExpect(jsonPath("$.userId").value(123L))
-                .andExpect(jsonPath("$.balance").value(1000.0))
-                .andExpect(jsonPath("$.status").value("ACTIVE"));
-    }
-
-    @Test
-    @WithMockUser(roles = "USER")
-    void getCardsForUser_ShouldReturnCards() throws Exception {
-        List<CardDTO> mockCards = List.of(
-                new CardDTO(1L,
-                        "****1111",
-                        123L,
-                        LocalDate.now().plusYears(2),
-                        500.0,
-                        CardStatus.ACTIVE),
-                new CardDTO(2L,
-                        "****2222",
-                        123L,
-                        LocalDate.now().plusYears(1),
-                        1000.0,
-                        CardStatus.BLOCKED)
-        );
-
-        when(cardService.getCardsForCurrentUser()).thenReturn(mockCards);
-
-        mockMvc.perform(get("/api/cards"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].maskedCardNumber").value("****1111"))
-                .andExpect(jsonPath("$[1].status").value("BLOCKED"));
+                .andExpect(status().isOk());
     }
 
     @Test

@@ -5,6 +5,7 @@ import com.example.bankcards.entity.User;
 import com.example.bankcards.exception.UserNotFoundException;
 import com.example.bankcards.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -64,6 +65,33 @@ public class UserService {
             throw new UserNotFoundException(id);
         }
         userRepository.deleteById(id);
+    }
+
+    /**
+     * Обновляет данные пользователя по идентификатору.
+     *
+     * @param id идентификатор пользователя для обновления
+     * @param userDTO DTO с новыми данными пользователя
+     * @return обновленный DTO пользователя
+     * @throws UserNotFoundException если пользователь с указанным ID не найден
+     * @throws IllegalArgumentException если id == null или userDTO == null
+     */
+    @Transactional
+    public UserDTO updateUser(Long id, UserDTO userDTO) {
+        if (id == null || userDTO == null) {
+            throw new IllegalArgumentException("ID и UserDTO не могут быть null");
+        }
+
+        User existingUser = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException(id));
+
+        existingUser.setFirstName(userDTO.firstName());
+        existingUser.setSecondName(userDTO.secondName());
+        existingUser.setSurname(userDTO.surname());
+        existingUser.setBirthday(userDTO.birthday());
+
+        User updatedUser = userRepository.save(existingUser);
+        return toDTO(updatedUser);
     }
 
     /**

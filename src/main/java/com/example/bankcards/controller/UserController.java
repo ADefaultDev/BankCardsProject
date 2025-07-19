@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -72,4 +73,29 @@ public class UserController {
     public void delete(@PathVariable Long id) {
         userService.deleteUser(id);
     }
+
+    /**
+     * Редактирует данные пользователя по идентификатору.
+     * Доступен только аутентифицированным пользователям с ролью ADMIN.
+     *
+     * @param id идентификатор пользователя для редактирования
+     * @param userDTO данные пользователя для редактирования
+     * @return обновленные данные пользователя
+     */
+    @Operation(summary = "Изменить данные пользователя по идентификатору")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Пользователь успешно удалён"),
+            @ApiResponse(responseCode = "400", description = "Пользователь не найден"),
+            @ApiResponse(responseCode = "401", description = "Пользователь не аутентифицирован"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен (не ADMIN)"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public UserDTO updateUser(
+            @PathVariable Long id,
+            @Valid @RequestBody UserDTO userDTO) {
+        return userService.updateUser(id, userDTO);
+    }
+
 }

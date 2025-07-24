@@ -93,7 +93,7 @@ public class TransferService {
         }
 
         List<Card> fromCards = cardRepository.findByAccountId(fromAccount.getId());
-        List<Card> toCards = cardRepository.findByAccountId(fromAccount.getId());
+        List<Card> toCards = cardRepository.findByAccountId(toAccount.getId());
 
         Card fromCard = null;
         Card toCard = null;
@@ -120,22 +120,23 @@ public class TransferService {
             throw new CardInactiveException(toAccount.getId());
         }
 
-        double transferAmount = dto.amount();
+        double remainingAmount = dto.amount();
 
-        for(Card card : fromCards){
-            if(card.getStatus() == CardStatus.ACTIVE && card.getBalance() > 0){
-                fromCard = card;
-                if(fromCard.getBalance() >= transferAmount){
-                    fromCard.setBalance(fromCard.getBalance() - transferAmount);
-                    transferAmount-=transferAmount;
-                    cardRepository.save(fromCard);
-                }else{
-                    transferAmount-=fromCard.getBalance();
-                    fromCard.setBalance(0d);
-                    cardRepository.save(fromCard);
-                }
+        for (Card card : fromCards) {
+            if (card.getStatus() != CardStatus.ACTIVE || card.getBalance() <= 0) {
+                continue;
             }
-            if(transferAmount == 0) break;
+
+            double cardBalance = card.getBalance();
+            double amountToDeduct = Math.min(cardBalance, remainingAmount);
+
+            card.setBalance(cardBalance - amountToDeduct);
+            remainingAmount -= amountToDeduct;
+            cardRepository.save(card);
+
+            if (remainingAmount <= 0) {
+                break;
+            }
         }
 
         toCard.setBalance(toCard.getBalance() + dto.amount());

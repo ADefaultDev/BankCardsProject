@@ -5,7 +5,7 @@ import java.time.LocalDate;
 
 /**
  * Сущность, представляющая банковскую карту в системе.
- * Содержит информацию о номере карты, владельце, сроке действия,
+ * Содержит информацию о номере карты, счете владельца, сроке действия,
  * статусе и балансе.
  * @since 1.0
  * @author Vsevolod Batyrov
@@ -22,8 +22,8 @@ public class Card {
     private String encryptedCardNumber;
 
     @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @JoinColumn(name = "account_id", nullable = false)
+    private Account account;
 
     @Column(name = "expiration_date", nullable = false)
     private LocalDate expirationDate;
@@ -51,12 +51,12 @@ public class Card {
         this.encryptedCardNumber = encryptedCardNumber;
     }
 
-    public User getUser() {
-        return user;
+    public Account getAccount() {
+        return account;
     }
 
-    public void setUser(User user) {
-        this.user = user;
+    public void setAccount(Account account) {
+        this.account = account;
     }
 
     public LocalDate getExpirationDate() {

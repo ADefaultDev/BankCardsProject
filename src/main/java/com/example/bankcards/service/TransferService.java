@@ -2,18 +2,22 @@ package com.example.bankcards.service;
 
 import com.example.bankcards.dto.TransferRequestDTO;
 import com.example.bankcards.dto.TransferResponseDTO;
+import com.example.bankcards.entity.Account;
 import com.example.bankcards.entity.Card;
 import com.example.bankcards.entity.CardStatus;
+import com.example.bankcards.exception.AccountNotFoundException;
 import com.example.bankcards.exception.CardInactiveException;
 import com.example.bankcards.exception.CardNotFoundException;
 import com.example.bankcards.exception.InsufficientFundsException;
 import com.example.bankcards.exception.InvalidTransferAmountException;
 import com.example.bankcards.exception.UnauthorizedCardAccessException;
+import com.example.bankcards.repository.AccountRepository;
 import com.example.bankcards.repository.CardRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static com.example.bankcards.util.SecurityUtils.getCurrentUserId;
 
@@ -26,6 +30,7 @@ import static com.example.bankcards.util.SecurityUtils.getCurrentUserId;
  *   <li>Проверка перевода на корректность данных</li>
  * </ul>
  *
+ * @see AccountRepository
  * @see CardRepository
  * @see TransferRequestDTO
  * @since 1.0
@@ -34,9 +39,12 @@ import static com.example.bankcards.util.SecurityUtils.getCurrentUserId;
 @Service
 public class TransferService {
 
+    private final AccountRepository accountRepository;
     private final CardRepository cardRepository;
 
-    public TransferService(CardRepository cardRepository) {
+    public TransferService(AccountRepository accountRepository,
+                           CardRepository cardRepository) {
+        this.accountRepository = accountRepository;
         this.cardRepository = cardRepository;
     }
 
@@ -54,7 +62,7 @@ public class TransferService {
      * </ol>
      *
      * @param dto объект {@link TransferRequestDTO} с данными перевода:
-     *            fromCardId, toCardId и amount (не может быть null)
+     *            fromAccountId, toAccountId и amount (не может быть null)
      * @return {@link TransferResponseDTO} с результатом операции
      * @throws InvalidTransferAmountException если сумма перевода некорректна
      * @throws CardNotFoundException если карта не найдена
@@ -70,37 +78,79 @@ public class TransferService {
 
         Long currentUserId = getCurrentUserId();
 
-        Card fromCard = cardRepository.findById(dto.fromCardId())
-                .orElseThrow(() -> new CardNotFoundException(dto.fromCardId()));
+        Account fromAccount = accountRepository.findByUserId(dto.fromAccountId())
+                .orElseThrow(() -> new AccountNotFoundException(dto.fromAccountId()));
 
-        Card toCard = cardRepository.findById(dto.toCardId())
-                .orElseThrow(() -> new CardNotFoundException(dto.toCardId()));
+        Account toAccount = accountRepository.findByUserId(dto.toAccountId())
+                .orElseThrow(() -> new AccountNotFoundException(dto.toAccountId()));
 
-        if (!fromCard.getUser().getId().equals(currentUserId) || !toCard.getUser().getId().equals(currentUserId)) {
+        if (!fromAccount.getUser().getId().equals(currentUserId)) {
             throw new UnauthorizedCardAccessException();
         }
 
-        if (fromCard.getStatus() != CardStatus.ACTIVE) {
-            throw new CardInactiveException(fromCard.getId());
-        }
-
-        if (toCard.getStatus() != CardStatus.ACTIVE){
-            throw new CardInactiveException(toCard.getId());
-        }
-
-        if (fromCard.getBalance() < dto.amount()) {
+        if (fromAccount.getBalance() < dto.amount()) {
             throw new InsufficientFundsException();
         }
 
-        fromCard.setBalance(fromCard.getBalance() - dto.amount());
+        List<Card> fromCards = cardRepository.findByAccountId(fromAccount.getId());
+        List<Card> toCards = cardRepository.findByAccountId(fromAccount.getId());
+
+        Card fromCard = null;
+        Card toCard = null;
+
+        for(Card card : fromCards){
+            if(card.getStatus() == CardStatus.ACTIVE){
+                fromCard = card;
+                break;
+            }
+        }
+
+        if(fromCard == null) {
+            throw new CardInactiveException(fromAccount.getId());
+        }
+
+        for(Card card : toCards){
+            if(card.getStatus() == CardStatus.ACTIVE){
+                toCard = card;
+                break;
+            }
+        }
+
+        if(toCard == null) {
+            throw new CardInactiveException(toAccount.getId());
+        }
+
+        double transferAmount = dto.amount();
+
+        for(Card card : fromCards){
+            if(card.getStatus() == CardStatus.ACTIVE && card.getBalance() > 0){
+                fromCard = card;
+                if(fromCard.getBalance() >= transferAmount){
+                    fromCard.setBalance(fromCard.getBalance() - transferAmount);
+                    transferAmount-=transferAmount;
+                    cardRepository.save(fromCard);
+                }else{
+                    transferAmount-=fromCard.getBalance();
+                    fromCard.setBalance(0d);
+                    cardRepository.save(fromCard);
+                }
+            }
+            if(transferAmount == 0) break;
+        }
+
         toCard.setBalance(toCard.getBalance() + dto.amount());
 
-        cardRepository.save(fromCard);
         cardRepository.save(toCard);
 
+        fromAccount.setBalance(fromAccount.getBalance() - dto.amount());
+        toAccount.setBalance(toAccount.getBalance() + dto.amount());
+
+        accountRepository.save(fromAccount);
+        accountRepository.save(toAccount);
+
         return new TransferResponseDTO(
-                dto.fromCardId(),
-                dto.toCardId(),
+                dto.fromAccountId(),
+                dto.toAccountId(),
                 dto.amount(),
                 LocalDateTime.now(),
                 "SUCCESS"

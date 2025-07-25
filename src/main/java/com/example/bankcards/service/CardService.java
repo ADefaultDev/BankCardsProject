@@ -1,11 +1,15 @@
 package com.example.bankcards.service;
 
 import com.example.bankcards.dto.CardDTO;
+import com.example.bankcards.entity.Account;
 import com.example.bankcards.entity.Card;
 import com.example.bankcards.entity.CardStatus;
 import com.example.bankcards.entity.User;
 import com.example.bankcards.exception.AccessDeniedException;
+import com.example.bankcards.exception.AccountNotFoundException;
 import com.example.bankcards.exception.CardNotFoundException;
+import com.example.bankcards.exception.UserNotFoundException;
+import com.example.bankcards.repository.AccountRepository;
 import com.example.bankcards.repository.CardRepository;
 import com.example.bankcards.repository.UserRepository;
 import com.example.bankcards.util.EncryptionUtil;
@@ -13,6 +17,7 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -40,10 +45,14 @@ public class CardService {
 
     private final CardRepository cardRepository;
     private final UserRepository userRepository;
+    private final AccountRepository accountRepository;
 
-    public CardService(CardRepository cardRepository, UserRepository userRepository) {
+    public CardService(CardRepository cardRepository,
+                       UserRepository userRepository,
+                       AccountRepository accountRepository) {
         this.cardRepository = cardRepository;
         this.userRepository = userRepository;
+        this.accountRepository = accountRepository;
     }
 
     /**
@@ -51,14 +60,15 @@ public class CardService {
      *
      * @return DTO созданной карты
      * @throws EntityNotFoundException если пользователь не найден
+     * @throws AccountNotFoundException если у пользователя нет счета
      */
     public CardDTO createCard() {
         Long userId = getCurrentUserId();
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("Пользователь не найден"));
+        Account account = accountRepository.findByUserId(userId)
+                .orElseThrow(() -> new AccountNotFoundException(userId));
 
         Card card = new Card();
-        card.setUser(user);
+        card.setAccount(account);
         card.setEncryptedCardNumber(EncryptionUtil.encrypt(generateCardNumber()));
         card.setExpirationDate(LocalDate.now().plusYears(3));
         card.setBalance(0d);
@@ -76,8 +86,16 @@ public class CardService {
      */
     public List<CardDTO> getCardsForCurrentUser() {
         Long userId = getCurrentUserId();
+
         List<Card> cards = cardRepository.findByUserId(userId);
-        return cards.stream().map(this::toDTO).collect(Collectors.toList());
+
+        if (cards.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return cards.stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -112,7 +130,7 @@ public class CardService {
         return new CardDTO(
                 card.getId(),
                 displayNumber,
-                card.getUser().getId(),
+                card.getAccount().getUser().getId(),
                 card.getExpirationDate(),
                 card.getBalance(),
                 card.getStatus()
@@ -142,7 +160,7 @@ public class CardService {
                 .orElseThrow(() -> new CardNotFoundException(cardId));
 
         Long currentUserId = getCurrentUserId();
-        if (!card.getUser().getId().equals(currentUserId)) {
+        if (!card.getAccount().getUser().getId().equals(currentUserId)) {
             throw new AccessDeniedException(cardId);
         }
 

@@ -38,6 +38,7 @@ public class CardController {
     public CardController(CardService cardService) {
         this.cardService = cardService;
     }
+
     /**
      * Создает новую банковскую карту для текущего пользователя.
      * Доступен только аутентифицированным пользователям с ролью USER.
@@ -85,6 +86,7 @@ public class CardController {
     public List<CardDTO> getAllCards() {
         return cardService.getAllCardsForAdmin();
     }
+
     /**
      * Получает баланс конкретной карты текущего пользователя.
      * Доступен только аутентифицированным пользователям с ролью USER.

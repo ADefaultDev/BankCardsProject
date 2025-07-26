@@ -8,7 +8,6 @@ import com.example.bankcards.entity.User;
 import com.example.bankcards.exception.AccessDeniedException;
 import com.example.bankcards.exception.AccountNotFoundException;
 import com.example.bankcards.exception.CardNotFoundException;
-import com.example.bankcards.exception.UserNotFoundException;
 import com.example.bankcards.repository.AccountRepository;
 import com.example.bankcards.repository.CardRepository;
 import com.example.bankcards.repository.UserRepository;
@@ -57,6 +56,8 @@ public class CardService {
 
     /**
      * Создает новую банковскую карту для текущего пользователя.
+     * Если у пользователя нет действующих карт, то весь баланс счета появится на ней.
+     * В противном случае баланс будет равен 0.
      *
      * @return DTO созданной карты
      * @throws EntityNotFoundException если пользователь не найден
@@ -71,7 +72,13 @@ public class CardService {
         card.setAccount(account);
         card.setEncryptedCardNumber(EncryptionUtil.encrypt(generateCardNumber()));
         card.setExpirationDate(LocalDate.now().plusYears(3));
-        card.setBalance(0d);
+
+        if(hasUserActiveCards(userId)){
+            card.setBalance(0d);
+        }else{
+            card.setBalance(account.getBalance());
+        }
+
         card.setStatus(CardStatus.ACTIVE);
 
         cardRepository.save(card);
@@ -173,9 +180,26 @@ public class CardService {
      * @return список карт
      */
     public List<CardDTO> getAllCardsForAdmin() {
-
         return cardRepository.findAll().stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
+
+    /**
+     * Проверяет, есть ли у пользователя активные карты.
+     *
+     * @param userId идентификатор пользователя (не может быть null)
+     * @return true - если у пользователя есть хотя бы одна активная карта, иначе false
+     * @throws IllegalArgumentException если userId равен null
+     */
+    public boolean hasUserActiveCards(Long userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID cannot be null");
+        }
+
+        return cardRepository.findByUserId(userId)
+                .stream()
+                .anyMatch(card -> card.getStatus() == CardStatus.ACTIVE);
+    }
+
 }
